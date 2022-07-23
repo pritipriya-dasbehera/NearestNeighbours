@@ -6,12 +6,13 @@ use std::fs::File;
 use std::time::{self, Duration};
 use rand::Rng;
 use arr_macro::arr;
-// use ndarray::{Array, Array3};
+use ndarray::{Array, Array3};
 
 const NUM_OF_PARTICLES: usize = 1000;
 const NEAREST_NEIGHBOURS_REQ: usize = 3;
 const MAX_DIST: f64 = 0.8660254037844387;
-// const GRID_SIZE: usize =6;
+const GRID_SIZE: usize = 6;
+const GRID_LEN: f64 = 1.0/6.0;
 // const MAX_DIST: f64 = 1.0;
 
 fn main() {
@@ -27,27 +28,32 @@ fn main() {
     let t_point_write = now.elapsed();
     println!("The time taken to write {} particles is {} microseconds.",NUM_OF_PARTICLES, t_point_write.as_micros());
 
-    now = time::Instant::now();
-    let mut nearlist: [Vec<Node>;NUM_OF_PARTICLES] = arr![vec![Node{id:0, dist:MAX_DIST}].clone();1000]; // IMPORTANT..constant used here 
-    let t_init = now.elapsed();
-    println!("The time taken to initialise {} particle nearlist is {} microseconds.",NUM_OF_PARTICLES,t_init.as_micros());
+    // now = time::Instant::now();
+    // let mut nearlist: [Vec<Node>;NUM_OF_PARTICLES] = arr![vec![Node{id:0, dist:MAX_DIST}].clone();100]; // IMPORTANT..constant used here 
+    // let t_init = now.elapsed();
+    // println!("The time taken to initialise {} particle nearlist is {} microseconds.",NUM_OF_PARTICLES,t_init.as_micros());
     // print_nearlist(&nearlist);
 
-    // let mut grid = Array::from_elem((GRID_SIZE,GRID_SIZE,GRID_SIZE), vec![0_usize]);
-    // create_grid(&points, &mut grid);
-
     now = time::Instant::now();
-    brute_cal_nearest(&points, &mut nearlist);
-    let t_brute = now.elapsed();
-    println!("The time taken to brute calc {} particle nearlist is {} microseconds.",NUM_OF_PARTICLES,t_brute.as_micros());
+    let mut grid = Array::from_elem((GRID_SIZE,GRID_SIZE,GRID_SIZE), vec![0_usize]);
+    create_grid(&points, &mut grid);
+    let t_grid = now.elapsed();
+    println!("The time taken to make grid of {} particles is {} microseconds.",NUM_OF_PARTICLES,t_grid.as_micros());
 
-    now = time::Instant::now();
-    write_nearlist(&nearlist);
-    let elapsed_time = now.elapsed();
-    println!("The time taken to write {} particle nearlist is {} microseconds.",NUM_OF_PARTICLES,elapsed_time.as_micros());
+    write_grid(&grid);
+
+    // now = time::Instant::now();
+    // brute_cal_nearest(&points, &mut nearlist);
+    // let t_brute = now.elapsed();
+    // println!("The time taken to brute calc {} particle nearlist is {} microseconds.",NUM_OF_PARTICLES,t_brute.as_micros());
+
+    // now = time::Instant::now();
+    // write_nearlist(&nearlist);
+    // let elapsed_time = now.elapsed();
+    // println!("The time taken to write {} particle nearlist is {} microseconds.",NUM_OF_PARTICLES,elapsed_time.as_micros());
     // print_nearlist(&nearlist);
 
-    write_time(t_point_create, t_point_write, t_init, t_brute);
+    // write_time(t_point_create, t_point_write, t_init, t_brute);
 }
 
 // #[derive(Debug)]
@@ -162,16 +168,44 @@ fn write_time(t_point_create:Duration,t_point_write:Duration,t_init:Duration,t_b
 
 }
 
-// fn create_grid(points: &[Point], grid:&mut Array3<Vec<usize>>){
-//     for point in points{
-//         break;
-//     }
+fn create_grid(points: &[Point], grid:&mut Array3<Vec<usize>>){
+    for (i,point) in points.iter().enumerate(){
+        let x = unsafe { (point.x/GRID_LEN).floor().to_int_unchecked()};
+        let y = unsafe { (point.y/GRID_LEN).floor().to_int_unchecked()};
+        let z = unsafe { (point.z/GRID_LEN).floor().to_int_unchecked()};
+        grid[[x,y,z]][0] += 1;
+        let index = grid[[x,y,z]][0];
+        grid[[x,y,z]].insert(index, i);
+    }
+}
+
+fn write_grid(grid:&Array3<Vec<usize>>){
+    let mut file = File::create("grid.csv").expect("Something went wrong in file creation");
+    for cell in grid.iter(){
+        let mut data = String::new();
+        for id in cell.iter(){
+            data.push_str(&id.to_string());
+            data.push(',')
+        }
+        data.push('\n');
+        file.write_all(data.as_bytes()).expect("Couldnt write the points");
+    }
+}
+
+// fn write_grid(grid:&Array3<Vec<usize>>){
+//     let mut file = File::create("nearlist.csv").expect("Something went wrong in file creation");
+//     {0..GRID_SIZE}.for_each(|i|
+//         {0..GRID_SIZE}.for_each(|j|
+//             {0..GRID_SIZE}.for_each(|k|{
+//                 file.write_all();
+//             }
+//             )))
 // }
 
 fn brute_cal_nearest(points: &[Point], nearlist: &mut [Vec<Node>;NUM_OF_PARTICLES]){
     // let mut file = File::create("nearlist.csv").expect("Something went wrong in file creation");
     // let mut file = File::options().append(true).open("nearlist.csv").expect("Something went wrong in file creation");
-    for i in 0..NUM_OF_PARTICLES
+    {0..NUM_OF_PARTICLES}.for_each(|i|
     {
         for j in 0..NUM_OF_PARTICLES
         {
@@ -204,5 +238,6 @@ fn brute_cal_nearest(points: &[Point], nearlist: &mut [Vec<Node>;NUM_OF_PARTICLE
         // }
         // data.push_str("\n");
         // file.write_all(data.as_bytes()).expect("unable to write");
-    }
+    })
 }
+
