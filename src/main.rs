@@ -8,7 +8,7 @@ use rand::Rng;
 // use arr_macro::arr;
 // use ndarray::{Array3};
 
-const NUM_OF_PARTICLES: usize = 50000;
+const NUM_OF_PARTICLES: usize = 100;
 const NEAREST_NEIGHBOURS_REQ: usize = 10;
 const MAX_DIST: f64 = 0.8660254037844387;
 // const GRID_SIZE: usize = 6;
@@ -18,7 +18,7 @@ const MAX_DIST: f64 = 0.8660254037844387;
 fn main() {
     let mut now = time::Instant::now();
     let zeropt =  Point{x:0.0,y:0.0,z:0.0};
-    let mut points: [Point;NUM_OF_PARTICLES] = [zeropt;NUM_OF_PARTICLES];
+    let mut points  = vec![zeropt;NUM_OF_PARTICLES];
     point_generator(&mut points);
     let t_point_create = now.elapsed();
     println!("The time taken to create {} particles is {} microseconds.",NUM_OF_PARTICLES,t_point_create.as_micros());
@@ -29,7 +29,7 @@ fn main() {
     println!("The time taken to write {} particles is {} microseconds.",NUM_OF_PARTICLES, t_point_write.as_micros());
 
     now = time::Instant::now();
-    let mut nearlist: [[Node;NEAREST_NEIGHBOURS_REQ+1];NUM_OF_PARTICLES] = [[Node{id:0, dist:MAX_DIST};NEAREST_NEIGHBOURS_REQ+1];NUM_OF_PARTICLES]; // IMPORTANT..constant used here 
+    let mut nearlist = vec![Node{id:0,dist:MAX_DIST};(NEAREST_NEIGHBOURS_REQ+1)*NUM_OF_PARTICLES];
     let t_init = now.elapsed();
     println!("The time taken to initialise {} particle nearlist is {} microseconds.",NUM_OF_PARTICLES,t_init.as_micros());
     // print_nearlist(&nearlist);
@@ -84,7 +84,7 @@ fn dist(p1:&Point ,p2:&Point)->f64{
     dx.powf(2.0) + dy.powf(2.0) + dz.powf(2.0)
 }
 
-fn point_generator(points: &mut [Point]){
+fn point_generator(points: &mut Vec<Point>){
 
     // let mut file = File::create("points.csv").expect("Something went wrong in file creation");
     // let mut file = File::options().append(true).open("points.csv").expect("Something went wrong in file creation");
@@ -113,7 +113,7 @@ fn point_generator(points: &mut [Point]){
 //     }
 // }
 
-fn write_points(points: &[Point]){
+fn write_points(points: &Vec<Point>){
     let mut file = File::create("points.csv").expect("Something went wrong in file creation");
     // let mut file = File::options().append(true).open("points.csv").expect("Something went wrong in file creation");
     file.write_all(b"id,x,y,z\n").expect("unable to write");
@@ -134,13 +134,14 @@ fn write_points(points: &[Point]){
     }
 }
 
-fn write_nearlist(nearlist:&[[Node;NEAREST_NEIGHBOURS_REQ+1];NUM_OF_PARTICLES]){
+fn write_nearlist(nearlist:&Vec<Node>){
     let mut file = File::create("nearlist.csv").expect("Something went wrong in file creation");
     // let mut file = File::options().append(true).open("nearlist.csv").expect("Something went wrong in file creation");
-    for (i, _element) in nearlist.iter().enumerate().take(NUM_OF_PARTICLES)
+    // for (i, _element) in nearlist.iter().enumerate().take(NUM_OF_PARTICLES)
+    for i in 0..NUM_OF_PARTICLES //*(NEAREST_NEIGHBOURS_REQ+1)
     {
         let mut data = String::new();
-        for (j,element) in nearlist[i].iter().enumerate(){
+        for (j,element) in nearlist[i*(NEAREST_NEIGHBOURS_REQ+1)..i*(NEAREST_NEIGHBOURS_REQ+1)+NEAREST_NEIGHBOURS_REQ].iter().enumerate(){
             if j==0{data.push_str(&i.to_string());continue};
             if j==NEAREST_NEIGHBOURS_REQ+1{break;};
             data.push(',');
@@ -202,10 +203,11 @@ fn write_time(t_point_create:Duration,t_point_write:Duration,t_init:Duration,t_b
 //             )))
 // }
 
-fn brute_cal_nearest(points: &[Point], nearlist:&mut [[Node;NEAREST_NEIGHBOURS_REQ+1];NUM_OF_PARTICLES]){
+fn brute_cal_nearest(points: &Vec<Point>, nearlist:&mut Vec<Node>){
     // let mut file = File::create("nearlist.csv").expect("Something went wrong in file creation");
     // let mut file = File::options().append(true).open("nearlist.csv").expect("Something went wrong in file creation");
-    {0..NUM_OF_PARTICLES}.for_each(|i|
+    // {0..NUM_OF_PARTICLES}.for_each(|i|
+    for i in 0..NUM_OF_PARTICLES
     {
         for j in 0..NUM_OF_PARTICLES
         {
@@ -215,15 +217,15 @@ fn brute_cal_nearest(points: &[Point], nearlist:&mut [[Node;NEAREST_NEIGHBOURS_R
             }
             let d = dist(&points[i],&points[j]);
             // print!("The distance between point {i} and point {j} is {d}\n");
-            if d<nearlist[i][0].dist{
+            if d<nearlist[i*(NEAREST_NEIGHBOURS_REQ+1)].dist{
                 // print!("Inserting node for {i}\t");
                 let mut k = 1;
-                while k<NEAREST_NEIGHBOURS_REQ && nearlist[i][k].dist < d{
+                while k<NEAREST_NEIGHBOURS_REQ && nearlist[i*(NEAREST_NEIGHBOURS_REQ+1)+k].dist < d{
                     k+=1;
                 }
-                nearlist[i][k..].rotate_right(1);
-                nearlist[i][k] = Node{id:j as u32,dist:d};
-                nearlist[i][0].dist = nearlist[i][NEAREST_NEIGHBOURS_REQ].dist;
+                nearlist[i*(NEAREST_NEIGHBOURS_REQ+1)+k..=i*(NEAREST_NEIGHBOURS_REQ+1)+NEAREST_NEIGHBOURS_REQ].rotate_right(1);
+                nearlist[i*(NEAREST_NEIGHBOURS_REQ+1)+k] = Node{id:j as u32,dist:d};
+                nearlist[i*(NEAREST_NEIGHBOURS_REQ+1)].dist = nearlist[i*(NEAREST_NEIGHBOURS_REQ+1)+NEAREST_NEIGHBOURS_REQ].dist;
                 // print_nearlist(nearlist);
                 // println!("\n");
 
@@ -238,7 +240,7 @@ fn brute_cal_nearest(points: &[Point], nearlist:&mut [[Node;NEAREST_NEIGHBOURS_R
         // }
         // data.push_str("\n");
         // file.write_all(data.as_bytes()).expect("unable to write");
-    })
+    }
 }
 
 // fn grid_calc_nearest()
