@@ -11,53 +11,55 @@ use ndarray::{Array3};
 const NUM_OF_PARTICLES: usize = 100000;
 const NEAREST_NEIGHBOURS_REQ: usize = 10;
 const MAX_DIST: f64 = 0.8660254037844387;
-const GRID_SIZE: usize = 45;
-const GRID_LEN: f64 = 1.0/45.0;
+const GRID_SIZE: usize = 46;
+const GRID_LEN: f64 = 1.0/46.0;
 // const MAX_DIST: f64 = 1.0;
 
 fn main() {
     let mut now = time::Instant::now();
+    let _z = now;
     let zeropt =  Point{x:0.0,y:0.0,z:0.0};
     let mut points  = vec![zeropt;NUM_OF_PARTICLES];
     point_generator(&mut points);
-    let t_point_create = now.elapsed();
-    println!("The time taken to create {} particles is {} microseconds.",NUM_OF_PARTICLES,t_point_create.as_micros());
+    // let t_point_create = now.elapsed();
+    // println!("The time taken to create {} particles is {} microseconds.",NUM_OF_PARTICLES,t_point_create.as_micros());
 
-    now = time::Instant::now();
+    // now = time::Instant::now();
     write_points(&points);
-    let t_point_write = now.elapsed();
-    println!("The time taken to write {} particles is {} microseconds.",NUM_OF_PARTICLES, t_point_write.as_micros());
+    // let t_point_write = now.elapsed();
+    // println!("The time taken to write {} particles is {} microseconds.",NUM_OF_PARTICLES, t_point_write.as_micros());
 
-    now = time::Instant::now();
+    // now = time::Instant::now();
     let mut nearlist = vec![Node{id:0,dist:MAX_DIST};(NEAREST_NEIGHBOURS_REQ+1)*NUM_OF_PARTICLES];
-    let t_init = now.elapsed();
-    println!("The time taken to initialise {} particle nearlist is {} microseconds.",NUM_OF_PARTICLES,t_init.as_micros());
+    // let t_init = now.elapsed();
+    // println!("The time taken to initialise {} particle nearlist is {} microseconds.",NUM_OF_PARTICLES,t_init.as_micros());
     // print_nearlist(&nearlist);
 
     now = time::Instant::now();
     let mut grid = Array3::from_elem((GRID_SIZE,GRID_SIZE,GRID_SIZE), vec![0_usize]);
     create_grid(&points, &mut grid);
     let t_grid = now.elapsed();
-    println!("The time taken to make grid of {} particles is {} microseconds.",NUM_OF_PARTICLES,t_grid.as_micros());
+    // println!("The time taken to make grid of {} particles is {} microseconds.",NUM_OF_PARTICLES,t_grid.as_micros());
 
     write_grid(&grid);
 
     now = time::Instant::now();
     grid_calc_nearest(&points, &grid, &mut nearlist);
     let t_gridcalc = now.elapsed();
-    println!("The time taken to grid calc {} particle nearlist is {} microseconds.",NUM_OF_PARTICLES,t_gridcalc.as_micros());
+    // println!("The time taken to grid calc {} particle nearlist is {} microseconds.",NUM_OF_PARTICLES,t_gridcalc.as_micros());
 
     // now = time::Instant::now();
     // brute_cal_nearest(&points, &mut nearlist);
     // let t_brute = now.elapsed();
     // println!("The time taken to brute calc {} particle nearlist is {} microseconds.",NUM_OF_PARTICLES,t_brute.as_micros());
 
-    now = time::Instant::now();
+    // now = time::Instant::now();
     write_nearlist(&nearlist);
-    let elapsed_time = now.elapsed();
-    println!("The time taken to write {} particle nearlist is {} microseconds.",NUM_OF_PARTICLES,elapsed_time.as_micros());
+    // let elapsed_time = now.elapsed();
+    // println!("The time taken to write {} particle nearlist is {} microseconds.",NUM_OF_PARTICLES,elapsed_time.as_micros());
 
     // write_time(t_point_create, t_point_write, t_init, t_grid+t_gridcalc);
+    write_gridtime(t_grid,t_gridcalc);
 }
 
 // #[derive(Debug)]
@@ -166,21 +168,34 @@ fn write_nearlist(nearlist:&Vec<Node>){
     }
 }
 
-fn write_time(t_point_create:Duration,t_point_write:Duration,t_init:Duration,t_brute:Duration){
-    let mut file = File::options().append(true).open("time.csv").expect("Something went wrong in file creation");
+// fn write_time(t_point_create:Duration,t_point_write:Duration,t_init:Duration,t_brute:Duration){
+//     let mut file = File::options().append(true).open("time.csv").expect("Something went wrong in file creation");
+//     let mut data = String::new();
+//     data.push_str(&NUM_OF_PARTICLES.to_string());
+//     data.push(',');
+//     data.push_str(&t_point_create.as_micros().to_string());
+//     data.push(',');
+//     data.push_str(&t_point_write.as_micros().to_string());
+//     data.push(',');
+//     data.push_str(&t_init.as_micros().to_string());
+//     data.push(',');
+//     data.push_str(&t_brute.as_micros().to_string());
+//     data.push('\n');
+//     file.write_all(data.as_bytes()).expect("unable to write");
+// }
+
+fn write_gridtime(t_grid:Duration,t_gridcalc:Duration){
+    let mut file = File::options().append(true).open("gridtime2.csv").expect("Something went wrong in file creation");
     let mut data = String::new();
     data.push_str(&NUM_OF_PARTICLES.to_string());
     data.push(',');
-    data.push_str(&t_point_create.as_micros().to_string());
+    data.push_str(&GRID_SIZE.to_string());
     data.push(',');
-    data.push_str(&t_point_write.as_micros().to_string());
+    data.push_str(&t_grid.as_micros().to_string());
     data.push(',');
-    data.push_str(&t_init.as_micros().to_string());
-    data.push(',');
-    data.push_str(&t_brute.as_micros().to_string());
+    data.push_str(&t_gridcalc.as_micros().to_string());
     data.push('\n');
     file.write_all(data.as_bytes()).expect("unable to write");
-
 }
 
 fn create_grid(points: &[Point], grid:&mut Array3<Vec<usize>>){
