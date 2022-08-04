@@ -1,8 +1,8 @@
 #!/bin/bash
 # This is to find time for different particle number at the best cell per axis 
 trap "exit" INT
-n=( 100 500 1000 5000 10000 50000 100000 )
-g=( 4 8 10 17 21 36 46 )
+n=( 1000 5000 10000 25000 50000 75000 100000 )
+g=( 9 16 20 28 35 40 44 )
 for i in {0..6}
 do
     for j in 1 2 3

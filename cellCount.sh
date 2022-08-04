@@ -1,9 +1,9 @@
 #!/bin/bash
 # This is to find time for different particle number at a range of cell per axis 
 trap "exit" INT
-for n in 900
+for n in 50000
 do
-    for i in {21..25}
+    for i in {30..40}
     do
         for j in 1 2 3
         do
