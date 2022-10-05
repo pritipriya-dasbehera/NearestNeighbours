@@ -8,11 +8,11 @@ use rand::Rng;
 // use arr_macro::arr;
 use ndarray::{Array3};
 
-const NUM_OF_PARTICLES: usize = 100000;
-const NEAREST_NEIGHBOURS_REQ: usize = 10;
+const NUM_OF_PARTICLES: usize = 1000000;
+const NEAREST_NEIGHBOURS_REQ: usize = 1000;
 const MAX_DIST: f64 = 0.8660254037844387;
-const GRID_SIZE: usize = 44;
-const GRID_LEN: f64 = 1.0/44.0;
+const GRID_SIZE: usize = 95;
+const GRID_LEN: f64 = 1.0/95.0;
 // const MAX_DIST: f64 = 1.0;
 
 fn main() {
